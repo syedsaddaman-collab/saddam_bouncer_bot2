@@ -22,7 +22,6 @@ if (!fs.existsSync('.wwebjs_auth')) {
 }
 const zipPath = '.wwebjs_auth/RemoteAuth-saddam_bot.zip';
 if (!fs.existsSync(zipPath)) {
-    // Ye line ek khali .zip file banayegi taaki bot khush rahe aur crash na ho!
     const emptyZip = Buffer.from('UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==', 'base64');
     fs.writeFileSync(zipPath, emptyZip);
 }
@@ -56,7 +55,17 @@ mongoose.connect(MONGODB_URI).then(() => {
         }),
         puppeteer: {
             handleSIGINT: false,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            // 🔥 CHROME STRICT DIET (Low Memory Mode to prevent Render Crash)
+            args: [
+                '--no-sandbox', 
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--single-process',
+                '--disable-gpu'
+            ]
         }
     });
 
@@ -160,33 +169,11 @@ mongoose.connect(MONGODB_URI).then(() => {
         }
     });
 
-    function sendTelegramControlButtons(userId, text) {
-        const opts = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: '✅ Main Baat Karunga', callback_data: `talk_${userId}` }, { text: '🤖 Bot Ko Bolne Do', callback_data: `keepbot_${userId}` }]
-                ]
-            }
-        };
-        tgBot.sendMessage(MY_CHAT_ID, text, { parse_mode: 'Markdown', ...opts }).catch(e=>console.log("TG Button Error"));
-    }
-
-    tgBot.on('callback_query', (query) => {
-        const action = query.data.split('_')[0];
-        const userId = query.data.split('_')[1];
-
-        if (!chatSessions[userId]) chatSessions[userId] = { state: 'bot_chatting', history: [] };
-
-        if (action === 'talk') {
-            chatSessions[userId].state = 'saddam_chatting';
-            tgBot.sendMessage(MY_CHAT_ID, `👍 Done! Ab aap direct chat kijiye.`).catch(e=>e);
-        } else if (action === 'keepbot') {
-            chatSessions[userId].state = 'bot_chatting';
-            tgBot.sendMessage(MY_CHAT_ID, `🤖 Thik hai, bot hi handle kar raha hai.`).catch(e=>e);
-        }
+    // 🔥 Added Error Catcher for Puppeteer
+    client.initialize().catch(err => {
+        console.error('❌ Puppeteer Init Error:', err);
     });
 
-    client.initialize();
 }).catch(err => { 
     console.error('❌ MongoDB Connection Error:', err);
 });
