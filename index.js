@@ -16,9 +16,15 @@ const TelegramBot = require('node-telegram-bot-api');
 const Groq = require('groq-sdk');
 const fs = require('fs');
 
-// 🔥 Zip file error ka permanent ilaaj
+// 🔥 Zip file error ka ASLI aur PERMANENT ilaaj (Dummy Zip File Trick)
 if (!fs.existsSync('.wwebjs_auth')) {
-    fs.mkdirSync('.wwebjs_auth');
+    fs.mkdirSync('.wwebjs_auth', { recursive: true });
+}
+const zipPath = '.wwebjs_auth/RemoteAuth-saddam_bot.zip';
+if (!fs.existsSync(zipPath)) {
+    // Ye line ek khali .zip file banayegi taaki bot khush rahe aur crash na ho!
+    const emptyZip = Buffer.from('UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==', 'base64');
+    fs.writeFileSync(zipPath, emptyZip);
 }
 
 // --- CONFIGURATION ---
@@ -44,7 +50,7 @@ mongoose.connect(MONGODB_URI).then(() => {
     
     const client = new Client({
         authStrategy: new RemoteAuth({
-            clientId: 'saddam_bot', // 🔥 Isse zip file ka error nahi aayega
+            clientId: 'saddam_bot', 
             store: store,
             backupSyncIntervalMs: 300000
         }),
@@ -65,7 +71,6 @@ mongoose.connect(MONGODB_URI).then(() => {
 
     client.on('ready', async () => {
         console.log('\n✅ Bot Ready Hai! (Cloud Pro Mode 🚀)');
-        // 🔥 Safety net for Telegram timeout
         try {
             await tgBot.sendMessage(MY_CHAT_ID, 'Bhai, Saddam WA Bouncer (Cloud Pro Mode) active ho gaya hai! Session fully secured in Database.');
         } catch (err) {
