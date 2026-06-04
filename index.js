@@ -1,5 +1,12 @@
 const http = require('http');
-http.createServer((req, res) => res.end('Saddam Bot is Alive!')).listen(process.env.PORT || 8080);
+const port = process.env.PORT || 10000;
+http.createServer((req, res) => {
+    res.writeHead(200, {'Content-Type': 'text/plain'});
+    res.write('Saddam Bot is Alive!');
+    res.end();
+}).listen(port, () => {
+    console.log(`✅ Web server is running on port ${port} to keep Render happy!`);
+});
 
 const { Client, RemoteAuth, MessageMedia } = require('whatsapp-web.js');
 const { MongoStore } = require('wwebjs-mongo');
