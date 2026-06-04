@@ -16,6 +16,11 @@ const TelegramBot = require('node-telegram-bot-api');
 const Groq = require('groq-sdk');
 const fs = require('fs');
 
+// 🔥 Zip file error ka permanent ilaaj
+if (!fs.existsSync('.wwebjs_auth')) {
+    fs.mkdirSync('.wwebjs_auth');
+}
+
 // --- CONFIGURATION ---
 const TELEGRAM_TOKEN = '8833572264:AAHXOxhvIFzuO9BY2pqdnZ-txCBR4G0M-IQ';
 const MY_CHAT_ID = '7680270295';
