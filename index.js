@@ -1,3 +1,6 @@
+const http = require('http');
+http.createServer((req, res) => res.end('Saddam Bot is Alive!')).listen(process.env.PORT || 8080);
+
 const { Client, RemoteAuth, MessageMedia } = require('whatsapp-web.js');
 const { MongoStore } = require('wwebjs-mongo');
 const mongoose = require('mongoose');
@@ -162,6 +165,6 @@ mongoose.connect(MONGODB_URI).then(() => {
     });
 
     client.initialize();
-}).catch(err => {
+}).catch(err => { 
     console.error('❌ MongoDB Connection Error:', err);
 });
