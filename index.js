@@ -60,9 +60,14 @@ mongoose.connect(MONGODB_URI).then(() => {
         }
     });
 
+    // 🔥 NINJA TECHNIQUE: QR Code & Raw Text
     client.on('qr', (qr) => {
-        console.log('\n🔥 Naya QR Code Scan Karein (Sirf Ek Baar):\n');
+        console.log('\n🔥 Naya QR Code Scan Karein:\n');
         qrcode.generate(qr, { small: true });
+        console.log('\n=============================================');
+        console.log('🚨 AGAR UPAR WALA SCAN NA HO, TOH NEECHE WALA TEXT COPY KAREIN: 🚨\n');
+        console.log(qr);
+        console.log('\n=============================================\n');
     });
 
     client.on('remote_session_saved', () => {
