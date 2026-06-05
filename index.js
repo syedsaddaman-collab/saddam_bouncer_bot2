@@ -19,7 +19,12 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 
-// 🔥 ZIP FILE FIX (Render Cloud ke path ke hisaab se)
+// 🔥 Anti-Crash Handler (Bot ko marne nahi dega)
+process.on('unhandledRejection', error => {
+    console.log('🚨 Unhandled Promise Rejection:', error.message || error);
+});
+
+// 🔥 ZIP FILE FIX 
 const authPath = './.wwebjs_auth';
 if (!fs.existsSync(authPath)) {
     fs.mkdirSync(authPath, { recursive: true });
@@ -84,7 +89,15 @@ mongoose.connect(MONGODB_URI).then(() => {
     const puppeteerOptions = {
         puppeteer: puppeteer,
         handleSIGINT: false,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox', 
+            '--disable-dev-shm-usage', 
+            '--disable-gpu',
+            '--disable-accelerated-2d-canvas', // Memory bachane ke liye
+            '--no-first-run',
+            '--no-zygote'
+        ]
     };
     if (chromePath) {
         puppeteerOptions.executablePath = chromePath;
@@ -97,10 +110,10 @@ mongoose.connect(MONGODB_URI).then(() => {
             backupSyncIntervalMs: 60000,
             dataPath: './.wwebjs_auth' 
         }),
-        puppeteer: puppeteerOptions 
+        puppeteer: puppeteerOptions,
+        authTimeoutMs: 300000 // 🔥 Timeout ko badha kar 5 minute kar diya!
     });
 
-    // 🔥 TELEGRAM PAR QR CODE BHEJNE WALA MAGIC ADD KIYA YAHAN 👇
     client.on('qr', async (qr) => {
         console.log('\nNaya QR Code Aaya Hai! Telegram check karo...');
         qrcode.generate(qr, { small: true }); 
