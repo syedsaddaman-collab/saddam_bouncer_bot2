@@ -18,12 +18,18 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 
+// 🔥 ZIP FILE FIX (Error ENOENT hamesha ke liye khatam)
+const zipPath = './RemoteAuth-saddam_bot.zip';
+if (!fs.existsSync(zipPath)) {
+    const emptyZip = Buffer.from('UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==', 'base64');
+    fs.writeFileSync(zipPath, emptyZip);
+}
+
 const TELEGRAM_TOKEN = '8833572264:AAHXOxhvIFzuO9BY2pqdnZ-txCBR4G0M-IQ';
 const MY_CHAT_ID = '7680270295';
 const GROQ_API_KEY = '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';
 const MONGODB_URI = 'mongodb+srv://syedsaddaman_db_user:2815Sss%40@cluster0.vrgnii8.mongodb.net/?appName=Cluster0';
 
-// Telegram polling conflict fix
 const tgBot = new TelegramBot(TELEGRAM_TOKEN, { polling: { interval: 2000, autoStart: true } });
 const groq = new Groq({ apiKey: GROQ_API_KEY });
 const chatSessions = {}; 
@@ -90,18 +96,15 @@ mongoose.connect(MONGODB_URI).then(() => {
         const contact = await msg.getContact();
         const contactName = contact.pushname || "Unknown";
 
-        // Naya user session create karein
         if (!chatSessions[userId]) {
             chatSessions[userId] = { interacted: false, human_mode: false };
         }
 
-        // Telegram par naya message forward karein
         const messageType = msg.hasMedia ? 'Media/Audio' : msg.body;
         const tgMsg = `📩 *Naya Message Aaya!*\n👤 *Banda:* ${contactName}\n💬 *Message:* ${messageType}`;
         await tgBot.sendMessage(MY_CHAT_ID, tgMsg, { parse_mode: "Markdown" });
         await sendControlButtons(MY_CHAT_ID, userId);
 
-        // Welcome / Voice Note Logic
         if (!chatSessions[userId].interacted) {
             try {
                 let audioFile = fs.existsSync('./assistant.ogg') ? './assistant.ogg' : './assistant.mp3';
@@ -115,15 +118,13 @@ mongoose.connect(MONGODB_URI).then(() => {
             } catch (e) { console.error("Voice Note Error:", e); }
             
             chatSessions[userId].interacted = true;
-            return; // Pehle message par AI text reply nahi karega
+            return; 
         }
 
-        // Agar Human mode ON hai, toh AI reply nahi karega
         if (chatSessions[userId].human_mode) {
             return;
         }
 
-        // AI Chat Logic
         try {
             const chatCompletion = await groq.chat.completions.create({
                 messages: [
@@ -134,10 +135,7 @@ mongoose.connect(MONGODB_URI).then(() => {
             });
             const aiReply = chatCompletion.choices[0].message.content;
             await msg.reply(aiReply);
-            
-            // Bot ka reply bhi Telegram par dikhaye
             await tgBot.sendMessage(MY_CHAT_ID, `🤖 *Bot Ka Reply:*\n${aiReply}`, { parse_mode: "Markdown" });
-
         } catch (err) { console.error("AI Error:", err); }
     });
 
