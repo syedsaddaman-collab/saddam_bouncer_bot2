@@ -30,7 +30,8 @@ const MY_CHAT_ID = '7680270295';
 const GROQ_API_KEY = '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';
 const MONGODB_URI = 'mongodb+srv://syedsaddaman_db_user:2815Sss%40@cluster0.vrgnii8.mongodb.net/?appName=Cluster0';
 
-const tgBot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
+// 🔥 TELEGRAM CONFLICT FIX: polling ko smart kiya
+const tgBot = new TelegramBot(TELEGRAM_TOKEN, { polling: { autoStart: true } });
 const groq = new Groq({ apiKey: GROQ_API_KEY });
 const chatSessions = {};
 
@@ -57,16 +58,10 @@ mongoose.connect(MONGODB_URI).then(() => {
         }
     });
 
-    // 🔥 Phone Number Link Support
     client.on('qr', (qr) => {
-        console.log('\n=============================================');
-        console.log('🚨 QR SCAN NA HO TOH:');
-        console.log('1. WhatsApp > Linked Devices > Link a device.');
-        console.log('2. Neeche "Link with phone number" dabayein.');
-        console.log('3. Apna number aur 8-digit code yahan daalein.');
-        console.log('=============================================\n');
+        console.log('\n🚨 QR SCAN NA HO TOH: WhatsApp > Link Device > Link with phone number.');
         qrcode.generate(qr, { small: true });
-        console.log('\nCopy this for manual pairing: ' + qr);
+        console.log('\nCopy for manual pairing: ' + qr);
     });
 
     client.on('remote_session_saved', () => {
