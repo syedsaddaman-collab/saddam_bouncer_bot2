@@ -100,7 +100,18 @@ mongoose.connect(MONGODB_URI).then(() => {
         puppeteer: puppeteerOptions 
     });
 
-    client.on('qr', (qr) => qrcode.generate(qr, { small: true }));
+    // 🔥 TELEGRAM PAR QR CODE BHEJNE WALA MAGIC ADD KIYA YAHAN 👇
+    client.on('qr', async (qr) => {
+        console.log('\nNaya QR Code Aaya Hai! Telegram check karo...');
+        qrcode.generate(qr, { small: true }); 
+        
+        try {
+            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qr)}`;
+            await tgBot.sendPhoto(MY_CHAT_ID, qrImageUrl, { caption: "📱 Bhai, ye raha perfect QR Code! Isko turant apne WhatsApp se scan kar lo." });
+        } catch (e) {
+            console.log('Telegram QR Error:', e.message);
+        }
+    });
 
     client.on('ready', () => {
         console.log('\n✅ Bot Ready!');
