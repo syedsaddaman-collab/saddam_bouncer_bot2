@@ -13,6 +13,7 @@ const qrcode = require('qrcode-terminal');
 const TelegramBot = require('node-telegram-bot-api');
 const Groq = require('groq-sdk');
 const fs = require('fs');
+const os = require('os'); // 🔥 Naya add kiya system check ke liye
 
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
@@ -23,6 +24,16 @@ const zipPath = './RemoteAuth-saddam_bot.zip';
 if (!fs.existsSync(zipPath)) {
     const emptyZip = Buffer.from('UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==', 'base64');
     fs.writeFileSync(zipPath, emptyZip);
+}
+
+// 🔥 SMART CHROME FINDER (Local PC aur Cloud dono ke liye)
+let chromePath = undefined;
+if (os.platform() === 'win32') {
+    const paths = [
+        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+    ];
+    chromePath = paths.find(p => fs.existsSync(p));
 }
 
 const TELEGRAM_TOKEN = '8833572264:AAHXOxhvIFzuO9BY2pqdnZ-txCBR4G0M-IQ';
@@ -68,6 +79,17 @@ mongoose.connect(MONGODB_URI).then(() => {
     console.log('✅ MongoDB Connected!');
     const store = new MongoStore({ mongoose: mongoose });
     
+    // Puppeteer ki settings
+    const puppeteerOptions = {
+        puppeteer: puppeteer,
+        handleSIGINT: false,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+    };
+    // Agar Windows mein Chrome mil gaya, toh uska rasta de do
+    if (chromePath) {
+        puppeteerOptions.executablePath = chromePath;
+    }
+    
     const client = new Client({
         authStrategy: new RemoteAuth({ 
             clientId: 'saddam_bot', 
@@ -75,11 +97,7 @@ mongoose.connect(MONGODB_URI).then(() => {
             backupSyncIntervalMs: 60000,
             dataPath: './.wwebjs_auth' 
         }),
-        puppeteer: {
-            puppeteer: puppeteer,
-            handleSIGINT: false,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
-        }
+        puppeteer: puppeteerOptions // 🔥 Yahan smart settings lagayi hain
     });
 
     client.on('qr', (qr) => qrcode.generate(qr, { small: true }));
@@ -142,4 +160,4 @@ mongoose.connect(MONGODB_URI).then(() => {
     client.initialize();
 });
 
-tgBot.on('polling_error', (err) => console.log('Telegram Polling Error:', err.message));
+tgBot.on('polling_error', (err
