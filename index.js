@@ -19,8 +19,12 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 
-// 🔥 ZIP FILE FIX 
-const zipPath = './RemoteAuth-saddam_bot.zip';
+// 🔥 ZIP FILE FIX (Render Cloud ke path ke hisaab se)
+const authPath = './.wwebjs_auth';
+if (!fs.existsSync(authPath)) {
+    fs.mkdirSync(authPath, { recursive: true });
+}
+const zipPath = `${authPath}/RemoteAuth-saddam_bot.zip`;
 if (!fs.existsSync(zipPath)) {
     const emptyZip = Buffer.from('UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==', 'base64');
     fs.writeFileSync(zipPath, emptyZip);
