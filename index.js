@@ -29,7 +29,7 @@ if (!fs.existsSync(authPath)) {
 }
 
 // 🔥 Keys yahan fit hain
-const TELEGRAM_TOKEN = '8849454247:AAGCRTs-lGN7vBpDP_M2hMGdhRDnl2CghmM';
+const TELEGRAM_TOKEN = '8849454247:AAHr5IgTjG04tpv2KgxqmUvL-tubdf4KcQo';
 const MY_CHAT_ID = '7680270295';
 const GROQ_API_KEY = 'gsk_fDI48J4idyApaUFYOUr0WGdyb3FY0nU0KAZMheqdaPNPkH8oZctU';
 const MONGODB_URI = 'mongodb+srv://syedsaddaman_db_user:2815Sss%40@cluster0.vrgnii8.mongodb.net/?appName=Cluster0';
