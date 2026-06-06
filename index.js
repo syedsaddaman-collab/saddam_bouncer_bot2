@@ -44,11 +44,9 @@ const tgBot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 const groq = new Groq({ apiKey: GROQ_API_KEY });
 const chatSessions = {}; 
 
-// 🔥 TELEGRAM ERROR FILTER (Spam band karne ke liye)
+// 🔥 TELEGRAM ERROR FILTER
 tgBot.on('polling_error', (error) => {
-    if(error.message.includes('409 Conflict')) {
-        // Ignore
-    } else {
+    if(!error.message.includes('409 Conflict')) {
         console.log('Telegram Error:', error.message);
     }
 });
@@ -62,7 +60,7 @@ async function sendControlButtons(chatId, userId) {
             ]
         }
     };
-    await tgBot.sendMessage(chatId, "Aap kya chahte hain?", opts);
+    await tgBot.sendMessage(chatId, "Kya aap is chat ko take over karna chahte hain?", opts);
 }
 
 tgBot.on('callback_query', async (query) => {
@@ -72,11 +70,11 @@ tgBot.on('callback_query', async (query) => {
     if (data.startsWith('human_')) {
         const userId = data.split('human_')[1];
         if (chatSessions[userId]) chatSessions[userId].human_mode = true;
-        await tgBot.sendMessage(chatId, "✅ Theek hai, ab aap baat kijiye. Bot is user ke liye ruk gaya hai.");
+        await tgBot.sendMessage(chatId, "✅ Theek hai, ab aap baat kijiye. Bot ruk gaya hai.");
     } else if (data.startsWith('bot_')) {
         const userId = data.split('bot_')[1];
         if (chatSessions[userId]) chatSessions[userId].human_mode = false;
-        await tgBot.sendMessage(chatId, "🤖 Theek hai, bot hi handle kar raha hai.");
+        await tgBot.sendMessage(chatId, "🤖 Theek hai, bot handle kar raha hai.");
     }
     await tgBot.answerCallbackQuery(query.id);
 });
@@ -85,9 +83,18 @@ mongoose.connect(MONGODB_URI).then(() => {
     console.log('✅ MongoDB Connected!');
     const store = new MongoStore({ mongoose: mongoose });
     
+    // 🔥 MEMORY CRASH FIX (Yeh Railway ko crash hone se rokega)
     const puppeteerOptions = {
         puppeteer: puppeteer,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox', 
+            '--disable-dev-shm-usage', 
+            '--disable-gpu',
+            '--no-zygote',
+            '--single-process', 
+            '--disable-accelerated-2d-canvas'
+        ]
     };
     
     const client = new Client({
@@ -117,25 +124,26 @@ mongoose.connect(MONGODB_URI).then(() => {
         tgBot.sendMessage(MY_CHAT_ID, '✅ Syed_Saddam_Hussain_Bouncer is Online and Active!');
     });
 
-    // 🔥 MAIN MESSAGE LOGIC (Voice Note + AI)
+    // 🔥 MAIN MESSAGE LOGIC
     client.on('message', async (msg) => {
-        if (msg.fromMe || msg.isStatus) return; // Khud ke messages ko ignore karega
+        if (msg.fromMe || msg.isStatus) return; 
         
         const userId = msg.from;
         const contact = await msg.getContact();
         const contactName = contact.pushname || "Unknown";
 
-        if (!chatSessions[userId]) chatSessions[userId] = { interacted: false, human_mode: false };
+        // 🔥 By Default bot handle karega (human_mode: false)
+        if (!chatSessions[userId]) {
+            chatSessions[userId] = { interacted: false, human_mode: false };
+        }
 
-        // Telegram par message aur buttons bhejega
         const messageType = msg.hasMedia ? 'Media/Audio' : msg.body;
         await tgBot.sendMessage(MY_CHAT_ID, `📩 *Naya Message Aaya!*\n👤 *Banda:* ${contactName}\n💬 *Message:* ${messageType}`, { parse_mode: "Markdown" });
         await sendControlButtons(MY_CHAT_ID, userId);
 
-        // 🔥 Pehli baar interaction (Recording bhejega)
+        // 🔥 Pehli baar interaction
         if (!chatSessions[userId].interacted) {
             try {
-                // Aapke GitHub me 'assistant.ogg' ya 'assistant.mp3' file honi chahiye
                 let audioFile = fs.existsSync('./assistant.ogg') ? './assistant.ogg' : (fs.existsSync('./assistant.mp3') ? './assistant.mp3' : null);
                 
                 if (audioFile) {
@@ -150,13 +158,15 @@ mongoose.connect(MONGODB_URI).then(() => {
             }
             
             chatSessions[userId].interacted = true;
-            return; 
+            return; // Pehli baar bas intro dega
         }
 
-        // Agar aapne "Main Baat Karunga" dabaya hai, toh bot chup rahega
-        if (chatSessions[userId].human_mode) return;
+        // Agar aapne "Main Baat Karunga" chuna hai, toh bot chup rahega
+        if (chatSessions[userId].human_mode) {
+            return;
+        }
 
-        // 🔥 AI Bot Handling
+        // 🔥 AI Bot Handling (Ab yeh guarantee chalega)
         try {
             const chatCompletion = await groq.chat.completions.create({
                 messages: [
@@ -168,7 +178,9 @@ mongoose.connect(MONGODB_URI).then(() => {
             const aiReply = chatCompletion.choices[0].message.content;
             await msg.reply(aiReply);
             await tgBot.sendMessage(MY_CHAT_ID, `🤖 *Bot Ka Reply:*\n${aiReply}`, { parse_mode: "Markdown" });
-        } catch (err) { console.error("AI Error:", err); }
+        } catch (err) { 
+            console.error("AI Error:", err); 
+        }
     });
 
     client.initialize();
