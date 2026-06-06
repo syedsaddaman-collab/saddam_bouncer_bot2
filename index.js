@@ -45,6 +45,15 @@ const tgBot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 const groq = new Groq({ apiKey: GROQ_API_KEY });
 const chatSessions = {}; 
 
+// 🔥 TELEGRAM ERROR FILTER (Spam band karne ke liye)
+tgBot.on('polling_error', (error) => {
+    if(error.message.includes('409 Conflict')) {
+        // Is error ko ignore karenge taaki console me spam na ho
+    } else {
+        console.log('Telegram Error:', error.message);
+    }
+});
+
 async function sendControlButtons(chatId, userId) {
     const opts = {
         reply_markup: {
@@ -98,10 +107,20 @@ mongoose.connect(MONGODB_URI).then(() => {
         authTimeoutMs: 300000 
     });
 
+    // 🔥 QR SPAM BLOCKER
+    let qrSent = false; // Ye lock hai
+
     client.on('qr', async (qr) => {
-        console.log('\nNaya QR Code Aaya Hai!');
-        const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qr)}`;
-        await tgBot.sendPhoto(MY_CHAT_ID, qrImageUrl, { caption: "📱 Bhai, ye raha perfect QR Code! Isko turant scan kar lo." }).catch(e => console.log('Telegram Photo Error:', e.message));
+        if (!qrSent) {
+            console.log('\nNaya QR Code Aaya Hai! (Telegram par bheja ja raha hai...)');
+            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qr)}`;
+            await tgBot.sendPhoto(MY_CHAT_ID, qrImageUrl, { caption: "📱 Bhai, ye raha QR Code! Isko turant scan kar lo. (Sirf ek baar aayega)" })
+                .catch(e => console.log('Telegram Photo Error:', e.message));
+            
+            qrSent = true; // Lock laga diya, ab aur nahi bhejega!
+        } else {
+            console.log('⏳ Naya QR background me generate hua, par Telegram pe dobara spam nahi kiya.');
+        }
     });
 
     client.on('ready', () => {
