@@ -23,12 +23,18 @@ process.on('unhandledRejection', error => {
     console.log('🚨 Unhandled Promise Rejection:', error.message || error);
 });
 
+// 🔥 ZIP FILE FIX (Bot ko disconnect hone se rokne ke liye sabse zaroori)
 const authPath = './.wwebjs_auth';
 if (!fs.existsSync(authPath)) {
     fs.mkdirSync(authPath, { recursive: true });
 }
+const zipPath = `${authPath}/RemoteAuth-saddam_bot.zip`;
+if (!fs.existsSync(zipPath)) {
+    const emptyZip = Buffer.from('UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==', 'base64');
+    fs.writeFileSync(zipPath, emptyZip);
+}
 
-// 🔥 Keys yahan fit hain
+// 🔥 Naya Token Yahan Fit Hai
 const TELEGRAM_TOKEN = '8849454247:AAHr5IgTjG04tpv2KgxqmUvL-tubdf4KcQo';
 const MY_CHAT_ID = '7680270295';
 const GROQ_API_KEY = 'gsk_fDI48J4idyApaUFYOUr0WGdyb3FY0nU0KAZMheqdaPNPkH8oZctU';
@@ -58,11 +64,11 @@ tgBot.on('callback_query', async (query) => {
     if (data.startsWith('human_')) {
         const userId = data.split('human_')[1];
         if (chatSessions[userId]) chatSessions[userId].human_mode = true;
-        await tgBot.sendMessage(chatId, "✅ Theek hai, ab aap baat kijiye.");
+        await tgBot.sendMessage(chatId, "✅ Theek hai, ab aap baat kijiye. Bot is user ke liye ruk gaya hai.");
     } else if (data.startsWith('bot_')) {
         const userId = data.split('bot_')[1];
         if (chatSessions[userId]) chatSessions[userId].human_mode = false;
-        await tgBot.sendMessage(chatId, "🤖 Theek hai, bot handle kar raha hai.");
+        await tgBot.sendMessage(chatId, "🤖 Theek hai, bot hi handle kar raha hai.");
     }
     await tgBot.answerCallbackQuery(query.id);
 });
@@ -73,18 +79,23 @@ mongoose.connect(MONGODB_URI).then(() => {
     
     const puppeteerOptions = {
         puppeteer: puppeteer,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox', 
+            '--disable-dev-shm-usage', // Memory crash se bachane ke liye
+            '--disable-gpu'
+        ]
     };
     
     const client = new Client({
         authStrategy: new RemoteAuth({ 
             clientId: 'saddam_bot', 
             store: store, 
-            backupSyncIntervalMs: 60000, // 🔥 Ye add kar diya gaya hai error hatane ke liye
+            backupSyncIntervalMs: 60000, 
             dataPath: './.wwebjs_auth' 
         }),
         puppeteer: puppeteerOptions,
-        authTimeoutMs: 300000 // 🔥 Stability ke liye 5 mins timeout
+        authTimeoutMs: 300000 
     });
 
     client.on('qr', async (qr) => {
@@ -95,7 +106,7 @@ mongoose.connect(MONGODB_URI).then(() => {
 
     client.on('ready', () => {
         console.log('\n✅ Bot Ready!');
-        tgBot.sendMessage(MY_CHAT_ID, '✅ Syed_Saddam_Hussain_Bouncer is Online!');
+        tgBot.sendMessage(MY_CHAT_ID, '✅ Syed_Saddam_Hussain_Bouncer is Online and Active!');
     });
 
     client.on('message', async (msg) => {
@@ -120,7 +131,7 @@ mongoose.connect(MONGODB_URI).then(() => {
 
         try {
             const chatCompletion = await groq.chat.completions.create({
-                messages: [{ role: "system", content: "You are a female Bouncer AI assistant for Syed Saddam Hussain. Be respectful, helpful, and concise." }, { role: "user", content: msg.body }],
+                messages: [{ role: "system", content: "You are a female Bouncer AI assistant for Syed Saddam Hussain. Be casual, respectful, and brief (Hinglish)." }, { role: "user", content: msg.body }],
                 model: "llama-3.1-8b-instant"
             });
             const aiReply = chatCompletion.choices[0].message.content;
